@@ -3,6 +3,7 @@ environtment.env
 .env
 token.pickle
 credentials.json
+token.json
 
 # Python
 __pycache__/
