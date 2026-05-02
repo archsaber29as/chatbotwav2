@@ -3,6 +3,8 @@ environtment.env
 .env
 token.pickle
 credentials.json
+token.json
+token
 
 # Python
 __pycache__/
@@ -22,3 +24,6 @@ bot_all.log
 .vscode/
 .idea/
 *.swp
+
+Procfile
+refresh_token.py
