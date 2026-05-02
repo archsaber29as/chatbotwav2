@@ -22,3 +22,6 @@ bot_all.log
 .vscode/
 .idea/
 *.swp
+
+Procfile
+refresh_token.py
