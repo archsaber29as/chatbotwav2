@@ -183,6 +183,11 @@ def setup_logging():
     _httpx_handler.setFormatter(logging.Formatter("%(message)s"))
     _httpx_handler.setLevel(logging.INFO)
 
+    tracer_logger = logging.getLogger("tracer")
+    tracer_logger.addHandler(_httpx_handler)
+    tracer_logger.setLevel(logging.DEBUG)
+    tracer_logger.propagate = True
+    
     logging.getLogger().addHandler(_all_handler)
     logging.getLogger().setLevel(logging.DEBUG)
 
