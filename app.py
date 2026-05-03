@@ -1,3 +1,8 @@
+# At the top with your other imports
+import logging
+from tracer import new_trace, get_trace_id
+
+logger = logging.getLogger("app")
 import os, re
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
@@ -33,7 +38,10 @@ from features.memory  import semantic_search
 
 # ── Flask app ────────────────────────────────────────────────────
 app = Flask(__name__)
-
+@app.after_request
+def log_response(response):
+    logger.info(f"[{get_trace_id()}] ◀ RESPONSE: HTTP {response.status_code}")
+    return response
 # ── DB + Scheduler ───────────────────────────────────────────────
 init_db()
 register_jobs()
@@ -298,9 +306,3 @@ if __name__ == "__main__":
         use_reloader=False,
         port=int(os.environ.get("PORT", 5000)),
     )
-
-@app.after_request
-def log_response(response):
-    tid = get_trace_id()
-    logger.info(f"[{tid}] ◀ RESPONSE: HTTP {response.status_code}")
-    return response
