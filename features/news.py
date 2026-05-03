@@ -2,7 +2,9 @@ import datetime, requests
 from bs4 import BeautifulSoup
 from config import NEWS_API_KEY, now_jkt
 from ai.groq_client import groq_complete
+from tracer import trace
 
+@trace
 def get_news(topic: str) -> str:
     url = (
         f"https://newsapi.org/v2/everything"

@@ -1,5 +1,7 @@
 from config import groq_client, gemini_client, MODEL_GROQ, MODEL_FALLBACK
+from tracer import trace
 
+@trace
 def groq_complete(
     system_prompt: str,
     user_prompt: str,

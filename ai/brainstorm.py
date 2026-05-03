@@ -1,7 +1,9 @@
 from config import gemini_client, MODEL_BRAINSTORM
 from features.memory import memory_context_block
 from ai.groq_client import groq_complete
+from tracer import trace
 
+@trace
 def ai_brainstorm(topic: str) -> str:
     """Use Gemini 3 Flash for brainstorming, enriched with semantic memory."""
     memory_ctx = memory_context_block(topic, min_score=0.45)

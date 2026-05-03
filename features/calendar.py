@@ -2,12 +2,14 @@ import sqlite3, datetime, re, json
 from config import now_jkt, localize_jkt
 from google_auth import get_google_services
 from ai.groq_client import groq_complete
+from tracer import trace
 
 DB_PATH = "bot.db"
 
 # ================================================================
 # AI EVENT PARSER
 # ================================================================
+@trace
 def parse_event_with_ai(user_input: str) -> dict | None:
     """Use Groq to extract event title, start, end, description from natural language."""
     now  = now_jkt()
@@ -50,6 +52,7 @@ User message: {user_input}"""
 # ================================================================
 # AI DATE PARSER (for get_events fallback)
 # ================================================================
+@trace
 def parse_date_from_message(text: str) -> str | None:
     """Use Groq to extract a YYYY-MM-DD date from a natural language message."""
     now = now_jkt()
@@ -76,6 +79,7 @@ User message: {text}"""
 # ================================================================
 # SAVE EVENT
 # ================================================================
+@trace
 def save_event(title: str, start_dt: str, end_dt: str = None, description: str = "") -> str:
     end_dt = end_dt or (
         datetime.datetime.strptime(start_dt, "%Y-%m-%d %H:%M") + datetime.timedelta(hours=1)
@@ -114,6 +118,7 @@ def save_event(title: str, start_dt: str, end_dt: str = None, description: str =
 # ================================================================
 # GET EVENTS
 # ================================================================
+@trace
 def get_events(date_hint: str = None, query: str = "") -> str:
     """Fetch events from Google Calendar for a given date or the next 7 days."""
     try:
@@ -168,6 +173,7 @@ def get_events(date_hint: str = None, query: str = "") -> str:
 # ================================================================
 # DELETE EVENT
 # ================================================================
+@trace
 def delete_event(keyword: str) -> str:
     try:
         calendar_svc, _, _ = get_google_services()
@@ -192,6 +198,7 @@ def delete_event(keyword: str) -> str:
 # ================================================================
 # EDIT EVENT
 # ================================================================
+@trace
 def edit_event(
     keyword: str,
     new_title: str = None,

@@ -3,12 +3,14 @@ from config import now_jkt, SPREADSHEET_ID, WHATSAPP_NOTE_LIMIT
 from google_auth import get_google_services
 from features.memory import save_embedding
 from features.utils import slice_data_rows, has_header_row
+from tracer import trace
 
 DB_PATH = "bot.db"
 
 # ================================================================
 # SAVE
 # ================================================================
+@trace
 def save_note(text: str) -> str:
     conn      = sqlite3.connect(DB_PATH)
     cursor    = conn.execute(
@@ -38,6 +40,7 @@ def save_note(text: str) -> str:
 # ================================================================
 # GET
 # ================================================================
+@trace
 def get_notes(range_start=None, range_end=None, count=None, range_all=False) -> str:
     try:
         _, sheets_svc, _ = get_google_services()
@@ -73,6 +76,7 @@ def get_notes(range_start=None, range_end=None, count=None, range_all=False) -> 
 # ================================================================
 # DELETE
 # ================================================================
+@trace
 def delete_note(keyword: str = None, index: int = None) -> str:
     try:
         _, sheets_svc, _ = get_google_services()
@@ -126,6 +130,7 @@ def delete_note(keyword: str = None, index: int = None) -> str:
 # ================================================================
 # EDIT
 # ================================================================
+@trace
 def edit_note(new_content: str, keyword: str = None, index: int = None) -> str:
     try:
         _, sheets_svc, _ = get_google_services()

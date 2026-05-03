@@ -1,6 +1,7 @@
 import sqlite3, pickle
 import numpy as np
 from config import gemini_client, MODEL_EMBED, now_jkt
+from tracer import trace
 
 DB_PATH = "bot.db"
 

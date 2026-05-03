@@ -1,10 +1,13 @@
 import re, json, calendar as _calendar
 from config import now_jkt, PAYROLL_DAY, FIXED_EXPENSES, VARIABLE_BUDGETS
 from ai.groq_client import groq_complete
+from tracer import trace
+
 
 # ================================================================
 # AI BUDGET INPUT PARSER
 # ================================================================
+@trace
 def _parse_budget_input(user_input: str) -> dict | None:
     now   = now_jkt()
     today = now.day
@@ -45,6 +48,7 @@ User message: {user_input}"""
 # ================================================================
 # INTERACTIVE PROMPT (when no numbers given)
 # ================================================================
+@trace
 def _budget_interactive_prompt() -> str:
     now       = now_jkt()
     today     = now.day
@@ -68,6 +72,7 @@ def _budget_interactive_prompt() -> str:
 # ================================================================
 # MAIN CALCULATOR
 # ================================================================
+@trace
 def calculate_budget(user_input: str) -> str:
     now   = now_jkt()
     today = now.day

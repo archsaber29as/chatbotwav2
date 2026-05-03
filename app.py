@@ -39,11 +39,17 @@ init_db()
 register_jobs()
 scheduler.start()
 
+# ── tracer log ───────────────────────────────────────────────
+from tracer import new_trace, trace, logger, get_trace_id
+
+
 # ================================================================
 # WEBHOOK
 # ================================================================
 @app.route("/webhook", methods=["POST"])
 def webhook():
+    tid = new_trace()
+    logger.info(f"[{tid}] ▶ INCOMING: {request.form.get('Body', '').strip()[:80]}")
     incoming = request.form.get("Body", "").strip()
     lower    = incoming.lower()
     resp     = MessagingResponse()
@@ -288,7 +294,13 @@ def logs_endpoint():
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
-        debug=True,
+        debug=False,
         use_reloader=False,
         port=int(os.environ.get("PORT", 5000)),
     )
+
+@app.after_request
+def log_response(response):
+    tid = get_trace_id()
+    logger.info(f"[{tid}] ◀ RESPONSE: HTTP {response.status_code}")
+    return response

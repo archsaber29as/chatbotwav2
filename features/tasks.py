@@ -1,12 +1,14 @@
 import sqlite3
 from config import now_jkt, WHATSAPP_NOTE_LIMIT
 from google_auth import get_google_services
+from tracer import trace
 
 DB_PATH = "bot.db"
 
 # ================================================================
 # SAVE
 # ================================================================
+@trace
 def save_task(text: str) -> str:
     conn = sqlite3.connect(DB_PATH)
     conn.execute("INSERT INTO tasks (content, timestamp) VALUES (?, ?)", (text, str(now_jkt())))
@@ -25,6 +27,7 @@ def save_task(text: str) -> str:
 # ================================================================
 # GET
 # ================================================================
+@trace
 def get_tasks(range_start=None, range_end=None, count=None, range_all=False) -> str:
     try:
         _, _, tasks_svc = get_google_services()
@@ -72,6 +75,7 @@ def get_tasks(range_start=None, range_end=None, count=None, range_all=False) -> 
 # ================================================================
 # COMPLETE
 # ================================================================
+@trace
 def complete_task(keyword: str) -> str:
     try:
         _, _, tasks_svc = get_google_services()
@@ -91,6 +95,7 @@ def complete_task(keyword: str) -> str:
 # ================================================================
 # DELETE
 # ================================================================
+@trace
 def delete_task(keyword: str = None, index: int = None) -> str:
     try:
         _, _, tasks_svc = get_google_services()
@@ -126,6 +131,7 @@ def delete_task(keyword: str = None, index: int = None) -> str:
 # ================================================================
 # EDIT
 # ================================================================
+@trace
 def edit_task(new_title: str, keyword: str = None, index: int = None) -> str:
     try:
         _, _, tasks_svc = get_google_services()

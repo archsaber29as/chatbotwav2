@@ -3,6 +3,7 @@ from config import (
     API_NINJAS_KEY,
     TWILIO_SID, TWILIO_TOKEN, TWILIO_SANDBOX_NUMBER, YOUR_NUMBER,
 )
+from tracer import trace
 
 _QUOTE_CATEGORY_MAP = {
     "motivat": "inspirational",
@@ -30,7 +31,7 @@ _QUOTE_CATEGORY_MAP = {
     "brave":   "courage",
     "berani":  "courage",
 }
-
+@trace
 def _fetch_ninja_quote(category: str = "") -> dict | None:
     try:
         url    = "https://api.api-ninjas.com/v2/randomquotes"
@@ -44,6 +45,7 @@ def _fetch_ninja_quote(category: str = "") -> dict | None:
         print(f"[API Ninjas quote error] {e}")
     return None
 
+@trace
 def _pick_category(context: str) -> str:
     lower = context.lower()
     for keyword, category in _QUOTE_CATEGORY_MAP.items():
@@ -51,6 +53,7 @@ def _pick_category(context: str) -> str:
             return category
     return "inspirational"
 
+@trace
 def generate_daily_quote(context: str = "") -> str:
     category = _pick_category(context) if context else "inspirational"
     raw = _fetch_ninja_quote(category) or _fetch_ninja_quote()
@@ -62,6 +65,7 @@ def generate_daily_quote(context: str = "") -> str:
     author = raw.get("author", "Unknown")
     return f"_{quote}_\n{author}"
 
+@trace
 def send_scheduled_quote(label: str):
     """Send an auto-scheduled quote to YOUR_NUMBER via Twilio (called by scheduler)."""
     from twilio.rest import Client as TwilioClient

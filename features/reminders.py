@@ -5,12 +5,15 @@ from config import (
 )
 from google_auth import get_google_services
 from ai.groq_client import groq_complete
+from tracer import trace
+
 
 DB_PATH = "bot.db"
 
 # ================================================================
 # AI REMINDER PARSER
 # ================================================================
+@trace
 def parse_reminder_with_ai(user_input: str) -> tuple:
     """Use Groq to extract reminder content and datetime from natural language."""
     now   = now_jkt()
@@ -57,6 +60,7 @@ User message: {user_input}"""
 # ================================================================
 # SAVE REMINDER
 # ================================================================
+@trace
 def save_reminder(text: str, remind_at: str) -> str:
     conn = sqlite3.connect(DB_PATH)
     conn.execute("INSERT INTO reminders (content, remind_at) VALUES (?, ?)", (text, remind_at))
@@ -89,6 +93,7 @@ def save_reminder(text: str, remind_at: str) -> str:
 # ================================================================
 # GET REMINDERS
 # ================================================================
+@trace
 def get_reminders_list(date_hint: str = None) -> str:
     conn = sqlite3.connect(DB_PATH)
     now  = now_jkt()
@@ -127,6 +132,7 @@ def get_reminders_list(date_hint: str = None) -> str:
 # ================================================================
 # DELETE REMINDER
 # ================================================================
+@trace
 def delete_reminder(keyword: str) -> str:
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -169,6 +175,7 @@ def delete_reminder(keyword: str) -> str:
 # ================================================================
 # SCHEDULER JOB — called every minute by APScheduler
 # ================================================================
+@trace
 def check_and_send_reminders():
     """Fire any due reminders via Twilio and mark them done."""
     from twilio.rest import Client as TwilioClient

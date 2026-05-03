@@ -1,12 +1,13 @@
 from ai.groq_client import groq_complete
 from database import save_conv_turn, load_conv_history, clear_conv_history
 from features.memory import memory_context_block
+from tracer import trace
 
 _RESET_TRIGGERS = {
     "new topic", "forget that", "start over", "reset chat",
     "mulai baru", "hapus history", "ganti topik", "clear chat",
 }
-
+@trace
 def ai_chat(user_input: str) -> str:
     """General chat using Groq Llama 3.1 8B with conversation history + semantic memory."""
     if user_input.strip().lower() in _RESET_TRIGGERS:

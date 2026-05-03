@@ -1,6 +1,6 @@
 import re, json
 from ai.groq_client import groq_complete
-
+from tracer import trace
 _CLASSIFY_PROMPT = """You are an intent classifier for a WhatsApp personal assistant.
 
 IMPORTANT: Understand the full CONTEXT and MEANING of the message first. Do NOT match by keywords alone.
@@ -60,7 +60,7 @@ Reply ONLY with a JSON object (no markdown, no preamble):
 
 User message: {message}"""
 
-
+@trace
 def classify_intent(text: str) -> dict:
     """Use Groq to classify the user's intent. Returns {intent, params}."""
     try:

@@ -2,9 +2,11 @@ import os, pickle
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 from config import SCOPES
+from tracer import trace
 
 _google_services_cache = None
 
+@trace
 def get_google_services():
     """Return (calendar, sheets, tasks) services. Loads once and caches.
     Reads token from GOOGLE_TOKEN_B64 env var (base64) or token.pickle file.

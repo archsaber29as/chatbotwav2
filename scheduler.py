@@ -9,6 +9,7 @@ from config import (
     TWILIO_SID, TWILIO_TOKEN, TWILIO_SANDBOX_NUMBER, YOUR_NUMBER,
 )
 
+from tracer import trace
 # ================================================================
 # SCHEDULER INSTANCE — imported by app.py
 # ================================================================
@@ -17,6 +18,7 @@ scheduler = BackgroundScheduler(timezone=TZ_JKT)
 # ================================================================
 # SESSION TIMEOUT — pushes idle prompt every minute
 # ================================================================
+@trace
 def check_session_timeout():
     """Proactively prompt the user to reset if they've been idle too long."""
     if is_pending_reset():
@@ -49,6 +51,7 @@ def check_session_timeout():
 # ================================================================
 # REGISTER ALL JOBS
 # ================================================================
+@trace
 def register_jobs():
     from features.reminders import check_and_send_reminders
     from features.quotes import send_scheduled_quote
