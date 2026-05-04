@@ -57,18 +57,16 @@ from tracer import new_trace, trace, logger, get_trace_id
 @app.route("/webhook", methods=["POST"])
 def webhook():
     tid = new_trace()
-    logger.info(f"[{tid}] ▶ INCOMING: {request.form.get('Body', '').strip()[:80]}")
     incoming = request.form.get("Body", "").strip()
-    lower    = incoming.lower()
-    resp     = MessagingResponse()
-    msg      = resp.message()
+    lower = incoming.lower()
+    resp = MessagingResponse()
+    msg = resp.message()
 
-    # ── Step 0a: Pending session-reset confirmation ──────────────
+    # Pending reset confirmation (keep this)
     if is_pending_reset():
         set_pending_reset(False)
         touch_last_active()
-        yes_words = {"yes", "ya", "yep", "yup", "reset", "clear", "iya", "ok", "okay", "sure"}
-        no_words  = {"no", "nope", "tidak", "nggak", "ngga", "lanjut", "continue", "stay", "keep"}
+        yes_words = {"yes", "ya", "reset", "clear", "iya", "ok", "okay", "sure"}
         if any(w in lower for w in yes_words):
             clear_conv_history()
             msg.body("🔄 Session reset! Fresh start — what's on your mind?")
@@ -76,194 +74,22 @@ def webhook():
             msg.body("👍 Continuing your previous session. What's up?")
         return str(resp)
 
-    # ── Step 0b: Update last_active ──────────────────────────────
     touch_last_active()
 
-    # ── Step 0c: /logs shortcut ──────────────────────────────────
+    # Logs shortcut (keep this)
     if lower.startswith("/logs"):
-        n    = 20
+        import re
+        n = 20
         nums = re.findall(r"\d+", incoming)
         if nums:
             n = min(int(nums[0]), 50)
         msg.body(f"🖥️ *Last {n} log lines:*\n\n{get_recent_logs(n)[-1400:]}")
         return str(resp)
 
-    # ── Step 1: Classify intent ──────────────────────────────────
-    classified = classify_intent(incoming)
-    intent     = classified.get("intent", "chat")
-    params     = classified.get("params", {})
-    reply_text = ""
-
-    # ── Step 2: Route ────────────────────────────────────────────
-    if intent == "reminder":
-        content, remind_at = parse_reminder_with_ai(incoming)
-        reply_text = save_reminder(content, remind_at)
-
-    elif intent == "get_reminders":
-        reply_text = get_reminders_list(params.get("date"))
-
-    elif intent == "complete_task":
-        keyword    = params.get("keyword") or re.sub(
-            r"complete task|finish task|done task|selesai task", "", lower
-        ).strip(" :?!")
-        reply_text = complete_task(keyword)
-
-    elif intent == "get_tasks":
-        reply_text = get_tasks(
-            range_start=params.get("range_start"),
-            range_end=params.get("range_end"),
-            count=params.get("count"),
-            range_all=bool(params.get("range_all")),
-        )
-
-    elif intent == "add_task":
-        content    = params.get("content") or re.sub(
-            r"add task|new task|tambah task|create task|task:", "", lower
-        ).strip(" :?!") or incoming
-        reply_text = save_task(content)
-
-    elif intent == "get_notes":
-        reply_text = get_notes(
-            range_start=params.get("range_start"),
-            range_end=params.get("range_end"),
-            count=params.get("count"),
-            range_all=bool(params.get("range_all")),
-        )
-
-    elif intent == "add_note":
-        content    = params.get("content") or re.sub(
-            r"note:|notes:|add note|save note|catatan:|catat", "", lower
-        ).strip(" :?!") or incoming
-        reply_text = save_note(content)
-
-    elif intent == "get_ideas":
-        reply_text = get_ideas(
-            range_start=params.get("range_start"),
-            range_end=params.get("range_end"),
-            count=params.get("count"),
-            range_all=bool(params.get("range_all")),
-        )
-
-    elif intent == "add_idea":
-        content    = params.get("content") or re.sub(
-            r"idea:|save idea|add idea|ide:|simpan ide", "", lower
-        ).strip(" :?!") or incoming
-        reply_text = save_idea(content)
-
-    elif intent == "news":
-        topic = params.get("content") or lower
-        for w in ["news", "berita", "headline", "latest", "terbaru", "about", "tentang", "get", "show", "give me"]:
-            topic = topic.replace(w, "").strip(" ?!.,")
-        reply_text = get_news(topic or "world")
-
-    elif intent == "brainstorm":
-        topic      = params.get("content") or re.sub(
-            r"brainstorm|ide|ideas?|pikir|think about|think of", "", lower
-        ).strip(" :?!") or incoming
-        reply_text = ai_brainstorm(topic)
-
-    elif intent == "get_events":
-        date_hint  = params.get("date") or parse_date_from_message(incoming)
-        reply_text = get_events(date_hint, incoming)
-
-    elif intent == "add_event":
-        parsed = parse_event_with_ai(incoming)
-        if parsed and parsed.get("title") and parsed.get("start"):
-            reply_text = save_event(
-                parsed["title"].strip(),
-                parsed["start"].strip(),
-                parsed["end"].strip() if parsed.get("end") else None,
-                parsed.get("description", ""),
-            )
-        else:
-            reply_text = (
-                "⚠️ Could not understand the event.\n"
-                "Try: *Add event Team lunch on April 22 at 1pm*\n"
-                "Or: *New event Meeting tomorrow at 3pm for 2 hours*"
-            )
-
-    elif intent == "search_memory":
-        results = semantic_search(incoming, top_k=5, min_score=0.45)
-        if results:
-            items      = [
-                f"{i+1}. {r['content']} _({r['source_type']}, {round(r['score']*100)}% match)_"
-                for i, r in enumerate(results)
-            ]
-            reply_text = "🔍 *Found in your memory:*\n\n" + "\n".join(items)
-        else:
-            reply_text = "🔍 Nothing relevant found in your notes or ideas."
-
-    elif intent == "quote":
-        context    = re.sub(
-            r"quote|motivate me|inspire me|motivasi|inspirasi|give me a|berikan|kasih",
-            "", lower
-        ).strip(" :?!")
-        reply_text = generate_daily_quote(context)
-
-    elif intent == "budget":
-        reply_text = calculate_budget(incoming)
-
-    elif intent == "delete_note":
-        idx        = params.get("index")
-        kw         = params.get("keyword") or params.get("content")
-        reply_text = delete_note(keyword=kw, index=int(idx) if idx else None)
-
-    elif intent == "edit_note":
-        idx        = params.get("index")
-        kw         = params.get("keyword")
-        new_content = params.get("content") or ""
-        reply_text  = edit_note(new_content, keyword=kw, index=int(idx) if idx else None)
-
-    elif intent == "delete_idea":
-        idx        = params.get("index")
-        kw         = params.get("keyword") or params.get("content")
-        reply_text = delete_idea(keyword=kw, index=int(idx) if idx else None)
-
-    elif intent == "edit_idea":
-        idx         = params.get("index")
-        kw          = params.get("keyword")
-        new_content = params.get("content") or ""
-        reply_text  = edit_idea(new_content, keyword=kw, index=int(idx) if idx else None)
-
-    elif intent == "delete_task":
-        idx        = params.get("index")
-        kw         = params.get("keyword") or params.get("content")
-        reply_text = delete_task(keyword=kw, index=int(idx) if idx else None)
-
-    elif intent == "edit_task":
-        idx        = params.get("index")
-        kw         = params.get("keyword")
-        new_title  = params.get("content") or ""
-        reply_text = edit_task(new_title, keyword=kw, index=int(idx) if idx else None)
-
-    elif intent == "delete_event":
-        kw         = params.get("keyword") or params.get("content") or incoming
-        reply_text = delete_event(kw)
-
-    elif intent == "edit_event":
-        kw     = params.get("keyword") or ""
-        parsed = parse_event_with_ai(incoming)
-        reply_text = edit_event(
-            keyword=kw,
-            new_title=parsed.get("title")       if parsed else None,
-            new_start=parsed.get("start")       if parsed else None,
-            new_end=parsed.get("end")           if parsed else None,
-            new_description=parsed.get("description") if parsed else None,
-        )
-
-    elif intent == "delete_reminder":
-        kw         = params.get("keyword") or params.get("content") or incoming
-        reply_text = delete_reminder(kw)
-
-    else:
-        reply_text = ai_chat(incoming)
-
-    # ── Save non-chat turns to conversation history ──────────────
-    if intent != "chat" and reply_text:
-        save_conv_turn("user",      incoming)
-        save_conv_turn("assistant", reply_text)
-
-    msg.body(reply_text)
+    # ✅ Everything else — let the agent handle it
+    from ai.agent import run_agent
+    reply = run_agent(incoming)
+    msg.body(reply)
     return str(resp)
 
 # ================================================================
