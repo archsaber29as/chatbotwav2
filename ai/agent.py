@@ -2,7 +2,8 @@ import json
 from config import groq_client, MODEL_GROQ
 from ai.tools import TOOLS
 from ai.tool_executor import execute_tool
-from database import get_conv_history, save_conv_turn
+from database import load_conv_history, save_conv_turn
+
 
 SYSTEM_PROMPT = """You are a smart WhatsApp personal assistant.
 You have tools to manage tasks, notes, ideas, reminders, calendar events, news, budget, and more.
@@ -15,7 +16,7 @@ def run_agent(user_message: str) -> str:
     """Run the tool-calling agent and return the final reply."""
 
     # Build message history
-    history = get_conv_history()  # returns list of {role, content} dicts
+    history = load_conv_history()  # returns list of {role, content} dicts
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages += history
     messages.append({"role": "user", "content": user_message})

@@ -18,9 +18,7 @@ from scheduler import scheduler, register_jobs
 from logging_setup import get_all_logs, get_recent_logs
 
 # ── AI ───────────────────────────────────────────────────────────
-from ai.classifier import classify_intent
-from ai.chat       import ai_chat
-from ai.brainstorm import ai_brainstorm
+# (agent handles everything — no direct imports needed here)
 
 # ── Features ────────────────────────────────────────────────────
 from features.reminders import parse_reminder_with_ai, save_reminder, get_reminders_list, delete_reminder
@@ -46,10 +44,6 @@ def log_response(response):
 init_db()
 register_jobs()
 scheduler.start()
-
-# ── tracer log ───────────────────────────────────────────────
-from tracer import new_trace, trace, logger, get_trace_id
-
 
 # ================================================================
 # WEBHOOK
